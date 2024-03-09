@@ -11,6 +11,7 @@ import com.xuecheng.content.mapper.CourseCategoryMapper;
 import com.xuecheng.content.mapper.CourseMarketMapper;
 import com.xuecheng.content.model.dto.AddCourseDto;
 import com.xuecheng.content.model.dto.CourseBaseInfoDto;
+import com.xuecheng.content.model.dto.EditCourseDto;
 import com.xuecheng.content.model.dto.QueryCourseParamsDto;
 import com.xuecheng.content.model.po.CourseBase;
 import com.xuecheng.content.model.po.CourseCategory;
@@ -131,6 +132,73 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
         return getCourseBaseInfo(courseId);
     }
 
+    //根据课程id查询课程基本信息，包括基本信息和营销信息
+    public CourseBaseInfoDto getCourseBaseInfo(Long courseId) {
+
+        CourseBaseInfoDto courseBaseInfoDto = new CourseBaseInfoDto();
+
+        //根据课程id查询课程基本信息
+        CourseBase courseBase = courseBaseMapper.selectById(courseId);
+        if (courseBase != null) {
+            BeanUtils.copyProperties(courseBase, courseBaseInfoDto);
+        }
+        //根据课程id查询营销信息
+        CourseMarket courseMarket = courseMarketMapper.selectById(courseId);
+        if (courseMarket != null) {
+            BeanUtils.copyProperties(courseMarket, courseBaseInfoDto);
+        }
+
+        //查询分类
+        CourseCategory courseCategoryBySt = courseCategoryMapper.selectById(courseBase.getSt());
+        courseBaseInfoDto.setStName(courseCategoryBySt.getName());
+        CourseCategory courseCategoryByMt = courseCategoryMapper.selectById(courseBase.getMt());
+        courseBaseInfoDto.setMtName(courseCategoryByMt.getName());
+        return courseBaseInfoDto;
+
+    }
+
+    /**
+     * 修改课程接口
+     *
+     * @param companyId
+     * @param editCourseDto
+     * @return
+     */
+    public CourseBaseInfoDto updateCourseBase(Long companyId, EditCourseDto editCourseDto) {
+
+        //参数校验
+        Long courseId = editCourseDto.getId();
+
+        CourseBase courseBase = courseBaseMapper.selectById(courseId);
+        if (courseBase == null) {
+            XueChengPlusException.exception("该课程信息不存在");
+        }
+
+        //校验本机构只能修改本机构的课程
+        if (!companyId.equals(courseBase.getCompanyId())) {
+            XueChengPlusException.exception("本机构只能修改本机构的课程");
+        }
+
+        //数据库更新
+        BeanUtils.copyProperties(editCourseDto,courseBase);
+        courseBase.setChangeDate(LocalDateTime.now());
+
+        int i = courseBaseMapper.updateById(courseBase);
+        if (i <= 0){
+            XueChengPlusException.exception("更新失败");
+        }
+
+        //营销对象
+        CourseMarket courseMarket = new CourseMarket();
+        BeanUtils.copyProperties(editCourseDto,courseMarket);
+        saveCourseMarket(courseMarket);
+
+        //封装结果
+        CourseBaseInfoDto courseBaseInfo = getCourseBaseInfo(courseId);
+
+        return courseBaseInfo;
+    }
+
     private int saveCourseMarket(CourseMarket courseMarket) {
         //参数合法校验
         //收费规则
@@ -157,31 +225,6 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
             courseMarket.setId(market.getId());
             return courseMarketMapper.updateById(courseMarket);
         }
-    }
-
-    //根据课程id查询课程基本信息，包括基本信息和营销信息
-    public CourseBaseInfoDto getCourseBaseInfo(long courseId) {
-
-        CourseBaseInfoDto courseBaseInfoDto = new CourseBaseInfoDto();
-
-        //根据课程id查询课程基本信息
-        CourseBase courseBase = courseBaseMapper.selectById(courseId);
-        if (courseBase != null) {
-            BeanUtils.copyProperties(courseBase, courseBaseInfoDto);
-        }
-        //根据课程id查询营销信息
-        CourseMarket courseMarket = courseMarketMapper.selectById(courseId);
-        if (courseMarket != null) {
-            BeanUtils.copyProperties(courseMarket, courseBaseInfoDto);
-        }
-
-        //查询分类
-        CourseCategory courseCategoryBySt = courseCategoryMapper.selectById(courseBase.getSt());
-        courseBaseInfoDto.setStName(courseCategoryBySt.getName());
-        CourseCategory courseCategoryByMt = courseCategoryMapper.selectById(courseBase.getMt());
-        courseBaseInfoDto.setMtName(courseCategoryByMt.getName());
-        return courseBaseInfoDto;
-
     }
 
 }
