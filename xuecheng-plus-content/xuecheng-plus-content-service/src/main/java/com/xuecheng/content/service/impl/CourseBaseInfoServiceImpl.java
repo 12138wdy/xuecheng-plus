@@ -70,7 +70,7 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
     public CourseBaseInfoDto createCourseBase(long companyId, AddCourseDto addCourseDto) {
 
         //合法性校验
-        if (StringUtils.isBlank(addCourseDto.getName())) {
+        /*if (StringUtils.isBlank(addCourseDto.getName())) {
             //throw new RuntimeException("课程名称为空");
             throw new XueChengPlusException("课程名称为空");
         }
@@ -96,7 +96,7 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
 
         if (StringUtils.isBlank(addCourseDto.getCharge())) {
             throw new XueChengPlusException("收费规则为空");
-        }
+        }*/
 
         //新增课程对象
         CourseBase courseBase = new CourseBase();
