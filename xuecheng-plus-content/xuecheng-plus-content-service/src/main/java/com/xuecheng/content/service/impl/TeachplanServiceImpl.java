@@ -1,15 +1,19 @@
 package com.xuecheng.content.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.content.mapper.TeachplanMapper;
+import com.xuecheng.content.mapper.TeachplanMediaMapper;
 import com.xuecheng.content.model.dto.SaveTeachplanDto;
 import com.xuecheng.content.model.dto.TeachplanDto;
 import com.xuecheng.content.model.po.Teachplan;
+import com.xuecheng.content.model.po.TeachplanMedia;
 import com.xuecheng.content.service.TeachplanService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,6 +25,8 @@ public class TeachplanServiceImpl implements TeachplanService {
 
     @Autowired
     private TeachplanMapper teachplanMapper;
+    @Autowired
+    private TeachplanMediaMapper teachplanMediaMapper;
 
 
     /**
@@ -65,6 +71,47 @@ public class TeachplanServiceImpl implements TeachplanService {
             teachplanMapper.updateById(teachplanNew);
         }
 
+
+    }
+
+    /**
+     * 根据id删除课程计划
+     * @param id
+     */
+    @Transactional
+    public void deleteTeachplan(Long id) {
+        //根据id查询课程计划
+        Teachplan teachplan = teachplanMapper.selectById(id);
+
+        if (teachplan.getParentid() == 0){
+            //大章节
+
+            //判断大章节下面是否有小章节
+            LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Teachplan::getParentid,id);
+            List<Teachplan> teachplans = teachplanMapper.selectList(queryWrapper);
+
+            if (!teachplans.isEmpty()){
+                //大章节下面有小章节
+                throw new XueChengPlusException("课程计划信息还有子级信息，无法操作");
+            }
+
+            int delete = teachplanMapper.deleteById(id);
+            if (delete <= 0){
+                throw new XueChengPlusException("删除章节失败");
+            }
+
+        }else {
+            //小章节
+            LambdaQueryWrapper<TeachplanMedia> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(TeachplanMedia::getTeachplanId,id);
+
+            teachplanMediaMapper.delete(queryWrapper);
+            int deleted = teachplanMapper.deleteById(id);
+            if (deleted <= 0){
+                throw new XueChengPlusException("删除小节失败");
+            }
+        }
 
     }
 
