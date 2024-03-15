@@ -25,4 +25,16 @@ public interface TeachplanService {
      * @param id
      */
     void deleteTeachplan(Long id);
+
+    /**
+     * 上移课程计划
+     * @param id
+     */
+    void moveUpTeachplan(Long id);
+
+    /**
+     * 下移课程计划
+     * @param id
+     */
+    void moveDownTeachplan(Long id);
 }

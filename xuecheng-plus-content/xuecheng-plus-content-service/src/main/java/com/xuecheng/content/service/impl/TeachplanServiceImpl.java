@@ -31,6 +31,7 @@ public class TeachplanServiceImpl implements TeachplanService {
 
     /**
      * 课程计划查询
+     *
      * @param courseId
      * @return
      */
@@ -43,6 +44,7 @@ public class TeachplanServiceImpl implements TeachplanService {
 
     /**
      * 新增修改课程计划
+     *
      * @param saveTeachplanDto
      */
     @Override
@@ -50,10 +52,10 @@ public class TeachplanServiceImpl implements TeachplanService {
         //根据id查询课程计划
         Teachplan teachplan = teachplanMapper.selectById(saveTeachplanDto.getId());
 
-        if (teachplan == null){
+        if (teachplan == null) {
             //新增
             Teachplan teachplanNew = new Teachplan();
-            BeanUtils.copyProperties(saveTeachplanDto,teachplanNew);
+            BeanUtils.copyProperties(saveTeachplanDto, teachplanNew);
 
             ////取出同父同级别的课程计划数量
             Long courseId = saveTeachplanDto.getCourseId();
@@ -63,10 +65,10 @@ public class TeachplanServiceImpl implements TeachplanService {
             teachplanNew.setOrderby(count + 1);
 
             teachplanMapper.insert(teachplanNew);
-        }else {
+        } else {
             //更新
             Teachplan teachplanNew = teachplanMapper.selectById(saveTeachplanDto.getId());
-            BeanUtils.copyProperties(saveTeachplanDto,teachplanNew);
+            BeanUtils.copyProperties(saveTeachplanDto, teachplanNew);
 
             teachplanMapper.updateById(teachplanNew);
         }
@@ -76,6 +78,7 @@ public class TeachplanServiceImpl implements TeachplanService {
 
     /**
      * 根据id删除课程计划
+     *
      * @param id
      */
     @Transactional
@@ -83,37 +86,133 @@ public class TeachplanServiceImpl implements TeachplanService {
         //根据id查询课程计划
         Teachplan teachplan = teachplanMapper.selectById(id);
 
-        if (teachplan.getParentid() == 0){
+        if (teachplan.getParentid() == 0) {
             //大章节
 
             //判断大章节下面是否有小章节
             LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Teachplan::getParentid,id);
+            queryWrapper.eq(Teachplan::getParentid, id);
             List<Teachplan> teachplans = teachplanMapper.selectList(queryWrapper);
 
-            if (!teachplans.isEmpty()){
+            if (!teachplans.isEmpty()) {
                 //大章节下面有小章节
                 throw new XueChengPlusException("课程计划信息还有子级信息，无法操作");
             }
 
             int delete = teachplanMapper.deleteById(id);
-            if (delete <= 0){
+            if (delete <= 0) {
                 throw new XueChengPlusException("删除章节失败");
             }
 
-        }else {
+        } else {
             //小章节
             LambdaQueryWrapper<TeachplanMedia> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(TeachplanMedia::getTeachplanId,id);
+            queryWrapper.eq(TeachplanMedia::getTeachplanId, id);
 
             teachplanMediaMapper.delete(queryWrapper);
             int deleted = teachplanMapper.deleteById(id);
-            if (deleted <= 0){
+            if (deleted <= 0) {
                 throw new XueChengPlusException("删除小节失败");
             }
         }
 
     }
+
+    /**
+     * 上移课程计划
+     *
+     * @param id
+     */
+    public void moveUpTeachplan(Long id) {
+        Teachplan teachplan = teachplanMapper.selectById(id);
+
+        if (teachplan.getParentid() == 0) {
+            //大章节
+            if (teachplan.getOrderby() > 1) {
+                LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(Teachplan::getOrderby, teachplan.getOrderby() - 1);
+                queryWrapper.eq(Teachplan::getGrade, teachplan.getGrade());
+                queryWrapper.eq(Teachplan::getCourseId, teachplan.getCourseId());
+
+                Teachplan teachplanNew = teachplanMapper.selectOne(queryWrapper);
+                teachplanNew.setOrderby(teachplanNew.getOrderby() + 1);
+
+                teachplanMapper.updateById(teachplanNew);
+
+                teachplan.setOrderby(teachplan.getOrderby() - 1);
+                int update = teachplanMapper.updateById(teachplan);
+                if (update <= 0) {
+                    throw new XueChengPlusException("上移章节失败");
+                }
+            }
+        } else {
+            //小章节
+            if (teachplan.getOrderby() > 1) {
+                LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(Teachplan::getOrderby, teachplan.getOrderby() - 1);
+                queryWrapper.eq(Teachplan::getGrade, teachplan.getGrade());
+                queryWrapper.eq(Teachplan::getParentid, teachplan.getParentid());
+
+                Teachplan teachplanNew = teachplanMapper.selectOne(queryWrapper);
+                teachplanNew.setOrderby(teachplanNew.getOrderby() + 1);
+
+                teachplanMapper.updateById(teachplanNew);
+
+                teachplan.setOrderby(teachplan.getOrderby() - 1);
+                int update = teachplanMapper.updateById(teachplan);
+                if (update <= 0) {
+                    throw new XueChengPlusException("上移小节失败");
+                }
+            }
+        }
+    }
+
+    /**
+     * 下移课程计划
+     *
+     * @param id
+     */
+    public void moveDownTeachplan(Long id) {
+        Teachplan teachplan = teachplanMapper.selectById(id);
+
+        if (teachplan.getParentid() == 0) {
+            //大章节
+            LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Teachplan::getOrderby, teachplan.getOrderby() + 1);
+            queryWrapper.eq(Teachplan::getGrade, teachplan.getGrade());
+            queryWrapper.eq(Teachplan::getCourseId, teachplan.getCourseId());
+
+            Teachplan teachplanNew = teachplanMapper.selectOne(queryWrapper);
+
+            teachplanNew.setOrderby(teachplanNew.getOrderby() - 1);
+
+            teachplanMapper.updateById(teachplanNew);
+
+            teachplan.setOrderby(teachplan.getOrderby() + 1);
+            int update = teachplanMapper.updateById(teachplan);
+            if (update <= 0) {
+                throw new XueChengPlusException("下移章节失败");
+            }
+        } else {
+            //小章节
+            LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Teachplan::getOrderby, teachplan.getOrderby() + 1);
+            queryWrapper.eq(Teachplan::getGrade, teachplan.getGrade());
+            queryWrapper.eq(Teachplan::getParentid, teachplan.getParentid());
+
+            Teachplan teachplanNew = teachplanMapper.selectOne(queryWrapper);
+            teachplanNew.setOrderby(teachplanNew.getOrderby() - 1);
+
+            teachplanMapper.updateById(teachplanNew);
+
+            teachplan.setOrderby(teachplan.getOrderby() + 1);
+            int update = teachplanMapper.updateById(teachplan);
+            if (update <= 0) {
+                throw new XueChengPlusException("下移小节失败");
+            }
+        }
+    }
+
 
     private Integer getTeachplanCount(Long courseId, Long parentId) {
         LambdaQueryWrapper<Teachplan> queryWrapper = new LambdaQueryWrapper<>();
