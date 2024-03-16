@@ -37,4 +37,15 @@ public class CourseTeacherController {
         return teacher;
     }
 
+
+    @ApiOperation("删除课程教师")
+    @DeleteMapping("/courseTeacher/course/{courseId}/{id}")
+    public void deleteCourseTeacher(@PathVariable Long courseId,@PathVariable Long id){
+
+        courseTeacherService.deleteCourseTeacher(courseId,id);
+    }
+
+
+
+
 }

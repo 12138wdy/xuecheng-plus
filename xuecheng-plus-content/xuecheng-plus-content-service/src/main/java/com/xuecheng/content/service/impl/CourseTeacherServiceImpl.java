@@ -22,13 +22,14 @@ public class CourseTeacherServiceImpl implements CourseTeacherService {
 
     /**
      * 课程教师查询
+     *
      * @param courseId
      * @return
      */
     public List<CourseTeacher> getCourseTeacher(Long courseId) {
 
         LambdaQueryWrapper<CourseTeacher> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(CourseTeacher::getCourseId,courseId);
+        queryWrapper.eq(CourseTeacher::getCourseId, courseId);
         queryWrapper.orderByAsc(CourseTeacher::getCreateDate);
 
         List<CourseTeacher> courseTeachers = courseTeacherMapper.selectList(queryWrapper);
@@ -39,35 +40,36 @@ public class CourseTeacherServiceImpl implements CourseTeacherService {
 
     /**
      * 修改，新增课程教师
+     *
      * @param courseTeacher
      * @return
      */
     public CourseTeacher saveCourseTeacher(CourseTeacher courseTeacher) {
         //参数校验
-        if (courseTeacher.getTeacherName() == null){
+        if (courseTeacher.getTeacherName() == null) {
             throw new XueChengPlusException("教师姓名为空");
         }
 
-        if (courseTeacher.getPosition() == null){
+        if (courseTeacher.getPosition() == null) {
             throw new XueChengPlusException("教师职位为空");
         }
 
-        if (courseTeacher.getId() == null){
+        if (courseTeacher.getId() == null) {
             //插入数据
             courseTeacher.setCreateDate(LocalDateTime.now());
             int insert = courseTeacherMapper.insert(courseTeacher);
-            if (insert <= 0){
+            if (insert <= 0) {
                 throw new XueChengPlusException("新增失败");
             }
 
             //返回数据
             CourseTeacher teacher = courseTeacherMapper.selectById(courseTeacher.getId());
             return teacher;
-        }else {
+        } else {
             //修改数据
 
             int update = courseTeacherMapper.updateById(courseTeacher);
-            if (update <= 0){
+            if (update <= 0) {
                 throw new XueChengPlusException("新增失败");
             }
 
@@ -76,5 +78,28 @@ public class CourseTeacherServiceImpl implements CourseTeacherService {
         }
 
 
+    }
+
+    /**
+     * 删除课程教师
+     *
+     * @param id
+     * @param courseId
+     */
+    public void deleteCourseTeacher(Long courseId, Long id) {
+
+        //参数校验
+        LambdaQueryWrapper<CourseTeacher> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(CourseTeacher::getId, id);
+        queryWrapper.eq(CourseTeacher::getCourseId, courseId);
+
+        CourseTeacher teacher = courseTeacherMapper.selectOne(queryWrapper);
+
+        if (teacher != null) {
+            int delete = courseTeacherMapper.deleteById(id);
+            if (delete <= 0){
+                throw new XueChengPlusException("删除失败");
+            }
+        }
     }
 }

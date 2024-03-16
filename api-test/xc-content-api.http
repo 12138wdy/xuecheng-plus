@@ -122,3 +122,6 @@ Content-Type: application/json
   "position": "教师职位",
   "introduction": "教师简介"
 }
+
+### 删除课程教师
+DELETE {{content_host}}/content/courseTeacher/course/24/72

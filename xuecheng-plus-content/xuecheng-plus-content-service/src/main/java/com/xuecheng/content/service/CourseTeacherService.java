@@ -23,4 +23,10 @@ public interface CourseTeacherService {
     CourseTeacher saveCourseTeacher(CourseTeacher courseTeacher);
 
 
+    /**
+     * 删除课程教师
+     * @param id
+     * @param courseId
+     */
+    void deleteCourseTeacher(Long courseId, Long id);
 }
