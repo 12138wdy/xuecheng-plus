@@ -16,9 +16,11 @@ public interface CourseTeacherService {
     List<CourseTeacher> getCourseTeacher(Long courseId);
 
     /**
-     * 新增课程教师
+     * 修改，新增课程教师
      * @param courseTeacher
      * @return
      */
     CourseTeacher saveCourseTeacher(CourseTeacher courseTeacher);
+
+
 }

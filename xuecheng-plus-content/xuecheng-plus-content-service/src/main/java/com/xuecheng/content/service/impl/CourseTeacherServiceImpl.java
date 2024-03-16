@@ -6,6 +6,7 @@ import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.content.mapper.CourseTeacherMapper;
 import com.xuecheng.content.model.po.CourseTeacher;
 import com.xuecheng.content.service.CourseTeacherService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +38,7 @@ public class CourseTeacherServiceImpl implements CourseTeacherService {
 
 
     /**
-     * 新增课程教师
+     * 修改，新增课程教师
      * @param courseTeacher
      * @return
      */
@@ -51,16 +52,29 @@ public class CourseTeacherServiceImpl implements CourseTeacherService {
             throw new XueChengPlusException("教师职位为空");
         }
 
-        //插入数据
-        courseTeacher.setCreateDate(LocalDateTime.now());
-        int insert = courseTeacherMapper.insert(courseTeacher);
-        if (insert <= 0){
-            throw new XueChengPlusException("新增失败");
+        if (courseTeacher.getId() == null){
+            //插入数据
+            courseTeacher.setCreateDate(LocalDateTime.now());
+            int insert = courseTeacherMapper.insert(courseTeacher);
+            if (insert <= 0){
+                throw new XueChengPlusException("新增失败");
+            }
+
+            //返回数据
+            CourseTeacher teacher = courseTeacherMapper.selectById(courseTeacher.getId());
+            return teacher;
+        }else {
+            //修改数据
+
+            int update = courseTeacherMapper.updateById(courseTeacher);
+            if (update <= 0){
+                throw new XueChengPlusException("新增失败");
+            }
+
+            CourseTeacher teacher = courseTeacherMapper.selectById(courseTeacher.getId());
+            return teacher;
         }
 
-        //返回数据
-        CourseTeacher teacher = courseTeacherMapper.selectById(courseTeacher.getId());
 
-        return teacher;
     }
 }

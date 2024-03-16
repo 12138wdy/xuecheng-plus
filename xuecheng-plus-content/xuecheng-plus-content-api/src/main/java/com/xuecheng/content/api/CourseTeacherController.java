@@ -29,7 +29,7 @@ public class CourseTeacherController {
     }
 
 
-    @ApiOperation("新增课程教师")
+    @ApiOperation("修改，新增课程教师")
     @PostMapping("/courseTeacher")
     public CourseTeacher saveCourseTeacher(@RequestBody CourseTeacher courseTeacher){
         CourseTeacher teacher = courseTeacherService.saveCourseTeacher(courseTeacher);
