@@ -111,3 +111,14 @@ Content-Type: application/json
 ### 课程教师查询
 GET {{content_host}}/content/courseTeacher/list/74
 Content-Type: application/json
+
+### 新增课程教师
+POST {{content_host}}/content/courseTeacher
+Content-Type: application/json
+
+{
+  "courseId": 72,
+  "teacherName": "王陆",
+  "position": "教师职位",
+  "introduction": "教师简介"
+}

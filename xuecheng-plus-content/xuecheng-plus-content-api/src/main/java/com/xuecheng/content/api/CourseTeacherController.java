@@ -6,9 +6,7 @@ import com.xuecheng.content.service.CourseTeacherService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,5 +28,13 @@ public class CourseTeacherController {
         return courseTeacher;
     }
 
+
+    @ApiOperation("新增课程教师")
+    @PostMapping("/courseTeacher")
+    public CourseTeacher saveCourseTeacher(@RequestBody CourseTeacher courseTeacher){
+        CourseTeacher teacher = courseTeacherService.saveCourseTeacher(courseTeacher);
+
+        return teacher;
+    }
 
 }
