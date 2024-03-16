@@ -22,4 +22,10 @@ public interface CourseBaseInfoService {
 
 
     CourseBaseInfoDto updateCourseBase(Long companyId, EditCourseDto editCourseDto);
+
+    /**
+     * 删除课程
+     * @param id
+     */
+    void deleteCourseBase(Long id);
 }

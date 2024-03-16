@@ -6,24 +6,23 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.xuecheng.base.exception.XueChengPlusException;
 import com.xuecheng.base.model.PageParams;
 import com.xuecheng.base.model.PageResult;
-import com.xuecheng.content.mapper.CourseBaseMapper;
-import com.xuecheng.content.mapper.CourseCategoryMapper;
-import com.xuecheng.content.mapper.CourseMarketMapper;
+import com.xuecheng.content.mapper.*;
 import com.xuecheng.content.model.dto.AddCourseDto;
 import com.xuecheng.content.model.dto.CourseBaseInfoDto;
 import com.xuecheng.content.model.dto.EditCourseDto;
 import com.xuecheng.content.model.dto.QueryCourseParamsDto;
-import com.xuecheng.content.model.po.CourseBase;
-import com.xuecheng.content.model.po.CourseCategory;
-import com.xuecheng.content.model.po.CourseMarket;
+import com.xuecheng.content.model.po.*;
 import com.xuecheng.content.service.CourseBaseInfoService;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
@@ -34,6 +33,10 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
     private CourseMarketMapper courseMarketMapper;
     @Autowired
     private CourseCategoryMapper courseCategoryMapper;
+    @Autowired
+    private CourseTeacherMapper courseTeacherMapper;
+    @Autowired
+    private TeachplanMapper teachplanMapper;
 
     public PageResult<CourseBase> queryCourseBaseList(PageParams pageParams, QueryCourseParamsDto courseParamsDto) {
 
@@ -180,23 +183,81 @@ public class CourseBaseInfoServiceImpl implements CourseBaseInfoService {
         }
 
         //数据库更新
-        BeanUtils.copyProperties(editCourseDto,courseBase);
+        BeanUtils.copyProperties(editCourseDto, courseBase);
         courseBase.setChangeDate(LocalDateTime.now());
 
         int i = courseBaseMapper.updateById(courseBase);
-        if (i <= 0){
+        if (i <= 0) {
             XueChengPlusException.exception("更新失败");
         }
 
         //营销对象
         CourseMarket courseMarket = new CourseMarket();
-        BeanUtils.copyProperties(editCourseDto,courseMarket);
+        BeanUtils.copyProperties(editCourseDto, courseMarket);
         saveCourseMarket(courseMarket);
 
         //封装结果
         CourseBaseInfoDto courseBaseInfo = getCourseBaseInfo(courseId);
 
         return courseBaseInfo;
+    }
+
+    /**
+     * 删除课程
+     *
+     * @param id
+     */
+    @Transactional
+    public void deleteCourseBase(Long id) {
+        CourseBase courseBase = courseBaseMapper.selectById(id);
+
+        if (!courseBase.getAuditStatus().equals("202002")) {
+            throw new XueChengPlusException("该课程审核未通过或已提交或已发布，不能删除");
+        } else {
+
+            //删除课程教师
+            LambdaQueryWrapper<CourseTeacher> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(CourseTeacher::getCourseId, id);
+
+            List<CourseTeacher> courseTeachers = courseTeacherMapper.selectList(queryWrapper);
+
+            if (!courseTeachers.isEmpty()) {
+                ArrayList<Long> idList = new ArrayList<>();
+                courseTeachers.stream().forEach(courseTeacher -> {
+                    Long courseTeacherId = courseTeacher.getId();
+                    idList.add(courseTeacherId);
+                });
+
+                courseTeacherMapper.deleteBatchIds(idList);
+            }
+
+            //删除营销信息
+            CourseMarket courseMarket = courseMarketMapper.selectById(id);
+            if (courseMarket != null) {
+                courseMarketMapper.deleteById(id);
+            }
+
+            //删除课程计划
+            LambdaQueryWrapper<Teachplan> lambdaQueryWrapper = new LambdaQueryWrapper<>();
+            lambdaQueryWrapper.eq(Teachplan::getCourseId, id);
+
+            List<Teachplan> teachplans = teachplanMapper.selectList(lambdaQueryWrapper);
+
+            if (!teachplans.isEmpty()) {
+                ArrayList<Long> teachplanIdList = new ArrayList<>();
+                teachplans.stream().forEach(teachplan -> {
+                    Long teachplanId = teachplan.getId();
+                    teachplanIdList.add(teachplanId);
+                });
+
+                teachplanMapper.deleteBatchIds(teachplanIdList);
+            }
+
+            //删除课程基本信息
+            courseBaseMapper.deleteById(id);
+
+        }
+
     }
 
     private int saveCourseMarket(CourseMarket courseMarket) {
